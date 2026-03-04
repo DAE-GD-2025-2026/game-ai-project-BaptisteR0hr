@@ -19,15 +19,14 @@ void ALevel_Flocking::BeginPlay()
 	TrimWorld->SetTrimWorldSize(3000.f);
 	TrimWorld->bShouldTrimWorld = true;
 
-	pFlock = TUniquePtr<Flock>(
-		new Flock(
-			GetWorld(),
-			SteeringAgentClass,
-			FlockSize,
-			TrimWorld->GetTrimWorldSize(),
-			pAgentToEvade,
-			true)
-			);
+	if (SteeringAgentClass)
+    {
+        pFlock = TUniquePtr<Flock>(new Flock (GetWorld(), SteeringAgentClass, FlockSize, 5000.f, pAgentToEvade));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("SteeringAgentClass is NOT set in BP_Level_Flocking!"));
+    }
 }
 
 // Called every frame

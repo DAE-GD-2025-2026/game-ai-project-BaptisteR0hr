@@ -2,6 +2,8 @@
 
 #include <Movement/SteeringBehaviors/SteeringHelpers.h>
 #include "Kismet/KismetMathLibrary.h"
+#include "vector"
+
 
 class ASteeringAgent;
 
@@ -26,3 +28,44 @@ protected:
 };
 
 // Your own SteeringBehaviors should follow here...
+class Seek: public ISteeringBehavior
+{
+public: 
+	Seek() = default;
+	virtual ~Seek() override = default;
+
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+};
+
+class Flee : public ISteeringBehavior {
+public:
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+};
+
+class Arrive : public ISteeringBehavior {
+public:
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+};
+
+class Pursuit : public ISteeringBehavior {
+public:
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+};
+
+class Evade : public Pursuit {
+public:
+	Evade() = default;
+	virtual ~Evade() override = default;
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+};
+
+class Wander : public Seek {
+public:
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+protected:
+	float Offset{ 100.f };
+	float Radius{ 50.f };
+	float MaxAngleChange{ 0.5f };
+	float WanderAngle{ 0.f };
+};
+
