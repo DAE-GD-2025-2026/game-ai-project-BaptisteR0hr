@@ -15,6 +15,36 @@ void ALevel_CombinedSteering::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 1. Initialiseer Behaviors
+	pSeekBehavior = std::make_unique<Seek>();
+	pWanderBehavior = std::make_unique<Wander>();
+	pEvadeBehavior = std::make_unique<Evade>();
+	pEvadeBehavior->SetTarget(400);
+
+	pBlendedSteering = std::make_unique<BlendedSteering>(std::vector<BlendedSteering::WeightedBehavior>{
+		{ pSeekBehavior.get(), 0.6f },
+		{ pWanderBehavior.get(), 0.4f }
+	});
+
+	pPrioritySteering = std::make_unique<PrioritySteering>(std::vector<ISteeringBehavior*>{
+		pEvadeBehavior.get(),
+			pBlendedSteering.get()
+	});
+
+	// 4. Spawn Agents
+	if (SteeringAgentClass)
+	{
+		// De Seeker (gebruikt de gecombineerde steering)
+		pSeekerAgent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass);
+		pSeekerAgent->SetSteeringBehavior(pPrioritySteering.get());
+		pSeekerAgent->SetActorLocation(FVector(0.f, 0.f, 90.f));
+
+		// De Wanderer (het doelwit dat ontweken moet worden)
+		pWandererAgent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass);
+		pWandererAgent->SetSteeringBehavior(pWanderBehavior.get());
+		pWandererAgent->SetActorLocation(FVector(500.f, 500.f, 90.f));
+	}
+
 }
 
 void ALevel_CombinedSteering::BeginDestroy()
@@ -68,6 +98,8 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 		if (ImGui::Checkbox("Debug Rendering", &CanDebugRender))
 		{
    // TODO: Handle the debug rendering of your agents here :)
+			if (pSeekerAgent) pSeekerAgent->SetDebugRenderingEnabled(CanDebugRender);
+			if (pWandererAgent) pWandererAgent->SetDebugRenderingEnabled(CanDebugRender);
 		}
 		ImGui::Checkbox("Trim World", &TrimWorld->bShouldTrimWorld);
 		if (TrimWorld->bShouldTrimWorld)

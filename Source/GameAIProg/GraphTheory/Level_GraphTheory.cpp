@@ -2,7 +2,6 @@
 
 
 #include "Level_GraphTheory.h"
-
 #include "Algorithms/EulerianPath.h"
 #include "Shared/GameAISpectator.h"
 
@@ -41,15 +40,18 @@ void ALevel_GraphTheory::BeginPlay()
 		Player->SetCameraProjection(ECameraProjectionMode::Orthographic);
 	}
 	
-	auto NodeID1 = Graph.AddNode(std::make_unique<Node>{FVector2D(0.f, 0.f)});
-	auto NodeID2 = Graph.AddNode(std::make_unique<Node>{FVector2D(100.f, 100.f)});
+	auto NodeID1 = Graph.AddNode(std::make_unique<Node>(FVector2D(0.f, 0.f)));
+	auto NodeID2 = Graph.AddNode(std::make_unique<Node>(FVector2D(200.f, 200.f)));
+	auto NodeID3 = Graph.AddNode(std::make_unique<Node>(FVector2D(400.f, 0.f)));
+
 	Graph.AddConnection(NodeID1, NodeID2);
+	Graph.AddConnection(NodeID2, NodeID3);
+	Graph.AddConnection(NodeID3, NodeID1);
 
 	// TODO Make the graph and a couple connected nodes here...
 	
 	// Spawn the Agent
-	Agent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, 
-	FVector{0,0,90}, FRotator::ZeroRotator);
+	Agent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, FVector{ 0,0,90 }, FRotator::ZeroRotator);
 	Agent->SetSteeringBehavior(&PathFollow);
 }
 
@@ -106,6 +108,21 @@ void ALevel_GraphTheory::Tick(float DeltaTime)
 	// TODO Check if the graph has updated
 	// TODO if so, run the EulerianPath algorithm
 	// TODO if a path is found, have the agent follow it
+	if (PlayerGraphEditor && PlayerGraphEditor->HasGraphUpdated())
+	{
+		EulerianPath<Node> eulerAlgo{ &Graph };
+		auto pathResult = eulerAlgo.FindPath();
+
+		if (!pathResult.empty())
+		{
+			UpdateAgentPath(pathResult);
+		}
+	}
+
+	if (Agent)
+	{
+		Agent->Tick(DeltaTime);
+	}
 }
 
 void ALevel_GraphTheory::UpdateAgentPath(std::vector<Node*> const& Trail)
@@ -113,6 +130,13 @@ void ALevel_GraphTheory::UpdateAgentPath(std::vector<Node*> const& Trail)
 	std::vector<FVector2D> path{};
 	
 	// TODO convert Node vector to positions vector
+	for (const Node* pNode : Trail)
+	{
+		if (pNode)
+		{
+			path.push_back(pNode->GetPosition());
+		}
+	}
 
 	PathFollow.SetPath(path);
 	if (path.size() > 0)

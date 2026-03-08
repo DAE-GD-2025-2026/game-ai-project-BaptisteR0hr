@@ -10,18 +10,16 @@ Flock::Flock(
 	float WorldSize,
 	ASteeringAgent* const pAgentToEvade,
 	bool bTrimWorld)
-	: pWorld{pWorld}
+	: pWorld{ pWorld }
 	, FlockSize{ FlockSize }
-	, pAgentToEvade{pAgentToEvade}
+	, pAgentToEvade{ pAgentToEvade }
 {
-	Agents.SetNum(FlockSize);
-
- // TODO: initialize the flock and the memory pool
 	pSeparationBehavior = std::make_unique<Separation>(this);
 	pCohesionBehavior = std::make_unique<Cohesion>(this);
 	pVelMatchBehavior = std::make_unique<VelocityMatch>(this);
 	pSeekBehavior = std::make_unique<Seek>();
 	pWanderBehavior = std::make_unique<Wander>();
+	pEvadeBehavior = std::make_unique<Evade>();
 
 	pBlendedSteering = std::make_unique<BlendedSteering>(std::vector<BlendedSteering::WeightedBehavior>{
 		{ pSeparationBehavior.get(), 0.5f },
@@ -30,13 +28,23 @@ Flock::Flock(
 		{ pWanderBehavior.get(), 0.1f }
 	});
 
+	pPrioritySteering = std::make_unique<PrioritySteering>(std::vector<ISteeringBehavior*>{
+		pEvadeBehavior.get(),
+			pBlendedSteering.get()
+	});
+
+	Agents.SetNum(FlockSize);
 	for (int i = 0; i < FlockSize; i++)
 	{
 		Agents[i] = pWorld->SpawnActor<ASteeringAgent>(AgentClass);
-		Agents[i]->SetSteeringBehavior(pBlendedSteering.get());
 
-		FVector2D randomPos = { FMath::FRandRange(-WorldSize, WorldSize), FMath::FRandRange(-WorldSize, WorldSize) };
-		Agents[i]->SetActorLocation(FVector(randomPos, 0.f));
+		if (Agents[i])
+		{
+			Agents[i]->SetSteeringBehavior(pPrioritySteering.get());
+
+			FVector2D randomPos = { FMath::FRandRange(-WorldSize, WorldSize), FMath::FRandRange(-WorldSize, WorldSize) };
+			Agents[i]->SetActorLocation(FVector(randomPos, 90.f)); 
+		}
 	}
 }
 
@@ -58,8 +66,11 @@ void Flock::Tick(float DeltaTime)
   // TODO: trim the agent to the world
 	for (auto pAgent : Agents)
 	{
+		if (!pAgent) continue;
+
 		RegisterNeighbors(pAgent);
 
+		pAgent->Tick(DeltaTime);
 	}
 }
 

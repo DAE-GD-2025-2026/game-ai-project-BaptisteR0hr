@@ -57,15 +57,23 @@ public:
 	Evade() = default;
 	virtual ~Evade() override = default;
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+
+	void SetEvadeRadius(float radius) { m_EvadeRadius = radius; }
+	float GetEvadeRadius() const { return m_EvadeRadius; }
+
+private:
+	float m_EvadeRadius = -1.f;
 };
 
 class Wander : public Seek {
 public:
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& agent) override;
+	float& GetOffsetRef() { return Offset; }
+	float& GetRadiusRef() { return Radius; }
 protected:
-	float Offset{ 100.f };
-	float Radius{ 50.f };
-	float MaxAngleChange{ 0.5f };
+	float Offset{ 600.f };
+	float Radius{ 400.f };
+	float MaxAngleChange{ 1.5f };
 	float WanderAngle{ 0.f };
 };
 
